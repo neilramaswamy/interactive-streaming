@@ -1,39 +1,10 @@
 "use client";
 
-import { Variants, motion, useAnimate } from "framer-motion";
+import { motion, useAnimate } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 
 const delay = async (seconds: number) => {
   await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
-};
-
-const draw = {
-  hidden: { pathLength: 0.2, opacity: 0.5 },
-  visible: (i) => {
-    const delay = 1 + i * 0.5;
-    return {
-      pathLength: 1,
-      opacity: 1,
-      transition: {
-        pathLength: { delay, type: "spring", duration: 1.5, bounce: 0 },
-        opacity: { delay, duration: 0.01 },
-      },
-    };
-  },
-};
-
-const myDraw: Variants = {
-  hidden: { pathLength: 0, opacity: 0 },
-  visible: () => {
-    return {
-      pathLength: 1,
-      opacity: 1,
-      transition: {
-        pathLength: { duration: 2, ease: "easeInOut" },
-        opacity: { duration: 0.2 },
-      },
-    };
-  },
 };
 
 const NUM_RECORDS = 10;
