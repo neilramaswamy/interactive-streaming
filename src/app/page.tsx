@@ -1,13 +1,19 @@
 "use client";
 
+import { DelayDistribution } from "@/components/DelayDistribution";
+import { Intro } from "@/components/Intro";
 import { OutOfOrder } from "@/components/OutOfOrder";
-import { Scene } from "@/components/scene";
+import { OutOfOrderSummary } from "@/components/OutOfOrderSummary";
 import { SceneProps } from "@/components/types";
-import { motion, useAnimate } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 
 // Scenes should be a list of React components that have SceneProps as Props
-const SCENES: React.FC<SceneProps>[] = [OutOfOrder, Scene];
+const SCENES: React.FC<SceneProps>[] = [
+  Intro,
+  OutOfOrder,
+  OutOfOrderSummary,
+  DelayDistribution,
+];
 
 export default function Home() {
   // sceneIndex tracks our progress through SCENES, and shotIndex tracks our
@@ -50,7 +56,7 @@ export default function Home() {
   const CurrentScene = SCENES[sceneIndex];
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <main className="flex min-h-screen flex-col justify-between p-24">
       <CurrentScene
         shotIndex={shotIndex}
         onSceneComplete={() => {
@@ -58,11 +64,14 @@ export default function Home() {
           if (!isOver) {
             setSceneIndex(sceneIndex + 1);
             setShotIndex(0);
+          } else {
+            console.log("Presentation is over!");
           }
         }}
       />
 
       <input
+        className="self-center"
         type="number"
         value={shotIndex}
         onChange={(e) => changeShotIndex(+e.target.value)}

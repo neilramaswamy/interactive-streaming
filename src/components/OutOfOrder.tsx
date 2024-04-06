@@ -10,12 +10,24 @@
  *
  */
 
+import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { SceneProps } from "./types";
-import { motion } from "framer-motion";
 import { d } from "./util";
 
-const NUM_SHOTS = 10;
+// Shot names
+const NUM_SHOTS = 6;
+
+const SHOT_TIMELINE = 0;
+const SHOT_CIRCLES = 1;
+const SHOT_TICKS = 2;
+const SHOT_SQUARES = 3;
+const SHOT_DOWNSTREAM = 4;
+const SHOT_OUT_OF_ORDER = 5;
+
+// Record stuff
+// Both width and height
+const RECORD_SIZE = 30;
 
 const initialRecords = [120, 220, 270, 340, 390, 490];
 
@@ -33,6 +45,8 @@ const aggregates = initialRecords.reduce<Record<number, number>>(
   {}
 );
 
+const outOfOrderRecords = [510, 190, 290];
+
 const tickMarks = [100, 200, 300, 400, 500];
 
 export const OutOfOrder = (props: SceneProps): JSX.Element => {
@@ -44,10 +58,11 @@ export const OutOfOrder = (props: SceneProps): JSX.Element => {
     }
   }, [shotIndex, onSceneComplete]);
 
-  const emittedDownstreamYOffset = shotIndex >= 6 ? 75 : 0;
+  const emittedDownstreamYOffset = shotIndex >= SHOT_DOWNSTREAM ? 75 : 0;
 
   return (
     <motion.svg
+      className="self-center"
       width="600"
       height="600"
       viewBox="0 0 600 600"
@@ -64,7 +79,10 @@ export const OutOfOrder = (props: SceneProps): JSX.Element => {
           pathLength: 0,
           opacity: 0,
         }}
-        animate={{ pathLength: +(shotIndex >= 1), opacity: +(shotIndex >= 1) }}
+        animate={{
+          pathLength: +(shotIndex >= SHOT_TIMELINE),
+          opacity: +(shotIndex >= SHOT_TIMELINE),
+        }}
         transition={{ duration: d(1) }}
         stroke="#ff0055"
         strokeWidth={2}
@@ -79,7 +97,10 @@ export const OutOfOrder = (props: SceneProps): JSX.Element => {
           pathLength: 0,
           opacity: 0,
         }}
-        animate={{ pathLength: +(shotIndex >= 1), opacity: +(shotIndex >= 1) }}
+        animate={{
+          pathLength: +(shotIndex >= SHOT_TIMELINE),
+          opacity: +(shotIndex >= SHOT_TIMELINE),
+        }}
         transition={{ duration: d(1), delay: d(1) }}
         strokeWidth={2}
       />
@@ -88,35 +109,49 @@ export const OutOfOrder = (props: SceneProps): JSX.Element => {
         // Snap to the nearest 100 multiple above you
         const windowEnd = Math.ceil(record / 100) * 100 - 50;
         // Subtract the width of the circle/square
-        const visualWindowEnd = windowEnd - 15;
+        const visualWindowEnd = windowEnd - RECORD_SIZE / 2;
 
         return (
           <motion.rect
             className={`record-${i}`}
             key={i}
-            width="30"
-            height="30"
+            width={RECORD_SIZE}
+            height={RECORD_SIZE}
             stroke="#00cc88"
             strokeWidth={1}
             // Start off as a circle
             initial={{
-              x: record,
+              x: record - RECORD_SIZE / 2,
               y: 250,
               rx: 30,
               opacity: 0,
             }}
             animate={{
-              opacity: +(shotIndex >= 2),
+              opacity: +(shotIndex >= SHOT_CIRCLES),
               y: 250 + emittedDownstreamYOffset,
-              x: shotIndex >= 4 ? visualWindowEnd : record,
-              rx: shotIndex >= 4 ? 0 : 30,
+              x: shotIndex >= SHOT_SQUARES ? visualWindowEnd : record,
+              rx: shotIndex >= SHOT_SQUARES ? 0 : 30,
             }}
-            // transition={{
-            //   delay: d(i * 0.5),
-            // }}
+            transition={{
+              delay: shotIndex <= SHOT_CIRCLES ? d(i * 0.5) : 0,
+            }}
           />
         );
       })}
+
+      {tickMarks.map((tick, i) => (
+        <motion.line
+          key={i}
+          initial={{ x1: tick, y1: 290, x2: tick, y2: 310, opacity: 0 }}
+          animate={{ opacity: +(shotIndex >= SHOT_TICKS) }}
+          transition={{
+            duration: d(0.5),
+            delay: d(i * 0.5),
+          }}
+          stroke="#00cc88"
+          strokeWidth={1.5}
+        />
+      ))}
 
       {Object.entries(aggregates).map(([window, count], i) => (
         <motion.text
@@ -126,30 +161,40 @@ export const OutOfOrder = (props: SceneProps): JSX.Element => {
             opacity: 0,
           }}
           animate={{
-            opacity: +(shotIndex >= 5),
+            opacity: +(shotIndex >= SHOT_SQUARES),
             y: 270 + emittedDownstreamYOffset,
           }}
-          //   transition={{
-          //     delay: d(i * 0.5),
-          //   }}
           stroke={"#00cc88"}
         >
           {count}
         </motion.text>
       ))}
 
-      {tickMarks.map((tick, i) => (
-        <motion.line
-          key={i}
-          initial={{ x1: tick, y1: 295, x2: tick, y2: 305, opacity: 0 }}
-          animate={{ opacity: +(shotIndex >= 3) }}
-          transition={{
-            duration: d(1),
-            delay: d(i * 0.5),
-          }}
-          stroke="#00cc88"
-        />
-      ))}
+      {outOfOrderRecords.map((record, i) => {
+        return (
+          <motion.rect
+            className={`ooo-record-${i}`}
+            key={i}
+            width={RECORD_SIZE}
+            height={RECORD_SIZE}
+            stroke="#00cc88"
+            strokeWidth={1}
+            // Start off as a circle
+            initial={{
+              x: record - RECORD_SIZE / 2,
+              y: 250,
+              rx: 30,
+              opacity: 0,
+            }}
+            animate={{
+              opacity: +(shotIndex >= SHOT_OUT_OF_ORDER),
+            }}
+            transition={{
+              delay: d(i * 0.5),
+            }}
+          />
+        );
+      })}
     </motion.svg>
   );
 };
