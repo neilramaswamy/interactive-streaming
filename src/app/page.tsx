@@ -40,8 +40,11 @@ export default function Home() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Left and right arrows
       if (e.key === "ArrowRight") {
+        // Prevent the page from scrolling in case we're zoomed in
+        e.preventDefault();
         changeShotIndex(shotIndex + 1);
       } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
         changeShotIndex(shotIndex - 1);
       }
     };

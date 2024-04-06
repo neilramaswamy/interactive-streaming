@@ -45,7 +45,8 @@ const aggregates = initialRecords.reduce<Record<number, number>>(
   {}
 );
 
-const outOfOrderRecords = [510, 190, 290];
+// Intentionally center these so that they align with the squares
+const outOfOrderRecords = [550, 150, 250];
 
 const tickMarks = [100, 200, 300, 400, 500];
 
