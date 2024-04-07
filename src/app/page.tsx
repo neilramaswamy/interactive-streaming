@@ -5,6 +5,7 @@ import { FundamentalTradeoff } from "@/components/FundamentalTradeoff";
 import { Intro } from "@/components/Intro";
 import { OutOfOrder } from "@/components/OutOfOrder";
 import { OutOfOrderSummary } from "@/components/OutOfOrderSummary";
+import { OutOfOrderWithWatermark } from "@/components/OutOfOrderWithWatermark";
 import { SceneProps } from "@/components/types";
 import { useCallback, useEffect, useState } from "react";
 
@@ -16,6 +17,7 @@ const SCENES: React.FC<SceneProps>[] = [
   OutOfOrderSummary,
   DelayDistribution,
   FundamentalTradeoff,
+  OutOfOrderWithWatermark,
 ];
 
 export default function Home() {
