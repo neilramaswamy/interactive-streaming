@@ -1,4 +1,4 @@
-const IS_DEV = false;
+const IS_DEV = true;
 
 /**
  * A utility to construct a delay across development and production modes.
