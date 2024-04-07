@@ -1,15 +1,3 @@
-/**
- * The OutOfOrder scene introduces the audience to out-of-order record handling in
- * streaming systems. It has the following shots:
- *  - Timeline (of event-time) is drawn left to right
- *  - We create (ordered) circular records on the event-time axis
- *  - We draw ticks on the timeline to show creating windows
- *  - We merge the circles into a single square with a # of elements inside it
- *  - We send these squares "downstream" by sliding them down
- *  - We add more circles to the windows, but they are out of order
- *
- */
-
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { SceneProps } from "./types";
@@ -39,14 +27,11 @@ const getWindowCenter = (record: number): number => {
   return getWindow(record) - 50;
 };
 
+const getTextWindowX = (window: number): number => getWindowCenter(window) - 5;
+
 // Record stuff
 // Both width and height
 const RECORD_SIZE = 30;
-
-const getRecordX = (i: number): number => initialRecords[i] - RECORD_SIZE / 2;
-const getWindowX = (i: number): number =>
-  getWindowCenter(initialRecords[i]) - RECORD_SIZE / 2;
-const getTextWindowX = (window: number): number => window - 50 - 5;
 
 const initialRecords = [125, 175, 230, 270, 420];
 
@@ -68,6 +53,102 @@ const aggregates = initialRecords.reduce<Record<number, number>>(
 const outOfOrderRecords = [160];
 
 const tickMarks = [100, 200, 300, 400, 500];
+
+interface TransformableRecordProps {
+  // The current shot index
+  shotIndex: number;
+
+  // The x-timestamp at which this record was created
+  eventTime: number;
+
+  // The shot index at which this becomes visible
+  appearShotIndex: number;
+  // The shot index at which this becomes a square and goes to the center of its window
+  aggregateShotIndex: number;
+  // The shot index at which this should be emitted downstream (i.e. slide down)
+  emitShotIndex: number;
+}
+
+const getVisualX = (eventTime: number): number => eventTime - RECORD_SIZE / 2;
+const getVisualWindowX = (eventTime: number): number =>
+  getWindowCenter(eventTime) - RECORD_SIZE / 2;
+
+const TransformableRecord = (props: TransformableRecordProps): JSX.Element => {
+  const {
+    shotIndex,
+    eventTime,
+    appearShotIndex,
+    aggregateShotIndex,
+    emitShotIndex,
+  } = props;
+
+  console.log(
+    "shotIndex",
+    shotIndex,
+    "appearShotIndex",
+    appearShotIndex,
+    "aggregateShotIndex",
+    aggregateShotIndex,
+    "emitShotIndex",
+    emitShotIndex
+  );
+
+  return (
+    <motion.rect
+      width={RECORD_SIZE}
+      height={RECORD_SIZE}
+      stroke="#00cc88"
+      strokeWidth={1}
+      initial={{
+        x: getVisualX(eventTime),
+        y: 250,
+        rx: 30,
+        opacity: 0,
+      }}
+      animate={{
+        opacity: +(shotIndex >= appearShotIndex),
+        x:
+          shotIndex >= aggregateShotIndex
+            ? getVisualWindowX(eventTime)
+            : getVisualX(eventTime),
+        rx: shotIndex >= aggregateShotIndex ? 0 : 30,
+        y: 250 + (shotIndex >= emitShotIndex ? 75 : 0),
+      }}
+    />
+  );
+};
+
+interface TransformableTextProps {
+  shotIndex: number;
+
+  // The x-timestamp of the end of the window this belongs to
+  windowEnd: number;
+
+  // The shot index at which this becomes visible
+  appearShotIndex: number;
+  // The shot index at which this should be emitted downstream (i.e. slide down)
+  emitShotIndex: number;
+}
+
+const TransformableText = (props: TransformableTextProps): JSX.Element => {
+  const { shotIndex, windowEnd, appearShotIndex, emitShotIndex } = props;
+
+  return (
+    <motion.text
+      initial={{
+        x: getTextWindowX(windowEnd),
+        opacity: 0,
+      }}
+      animate={{
+        opacity: +(shotIndex >= appearShotIndex),
+        y: 270 + (shotIndex >= emitShotIndex ? 75 : 0),
+      }}
+      stroke={"#00cc88"}
+    >
+      {aggregates[windowEnd]}
+    </motion.text>
+  );
+};
 
 export const OutOfOrder = (props: SceneProps): JSX.Element => {
   const { shotIndex, onSceneComplete } = props;
@@ -123,124 +204,52 @@ export const OutOfOrder = (props: SceneProps): JSX.Element => {
         strokeWidth={2}
       />
 
-      <motion.rect
-        key={`record-0`}
-        width={RECORD_SIZE}
-        height={RECORD_SIZE}
-        stroke="#00cc88"
-        strokeWidth={1}
-        // Start off as a circle
-        initial={{
-          x: getRecordX(0),
-          y: 250,
-          rx: 30,
-          opacity: 0,
-        }}
-        animate={{
-          opacity: +(shotIndex >= SHOT_CIRCLES_100_1),
-          y: 250 + (shotIndex >= SHOT_EMIT_100 ? 75 : 0),
-          x: shotIndex >= SHOT_SQUARE_100 ? getWindowX(0) : getRecordX(0),
-          rx: shotIndex >= SHOT_SQUARE_100 ? 0 : 30,
-        }}
+      <TransformableRecord
+        shotIndex={shotIndex}
+        eventTime={initialRecords[0]}
+        appearShotIndex={SHOT_CIRCLES_100_1}
+        aggregateShotIndex={SHOT_SQUARE_100}
+        emitShotIndex={SHOT_EMIT_100}
       />
 
-      <motion.rect
-        key={`record-1`}
-        width={RECORD_SIZE}
-        height={RECORD_SIZE}
-        stroke="#00cc88"
-        strokeWidth={1}
-        // Start off as a circle
-        initial={{
-          x: getRecordX(1),
-          y: 250,
-          rx: 30,
-          opacity: 0,
-        }}
-        animate={{
-          opacity: +(shotIndex >= SHOT_CIRCLES_100_2),
-          y: 250 + (shotIndex >= SHOT_EMIT_100 ? 75 : 0),
-          x: shotIndex >= SHOT_SQUARE_100 ? getWindowX(1) : getRecordX(1),
-          rx: shotIndex >= SHOT_SQUARE_100 ? 0 : 30,
-        }}
+      <TransformableRecord
+        shotIndex={shotIndex}
+        eventTime={initialRecords[1]}
+        appearShotIndex={SHOT_CIRCLES_100_2}
+        aggregateShotIndex={SHOT_SQUARE_100}
+        emitShotIndex={SHOT_EMIT_100}
       />
 
-      <motion.rect
-        key={`record-2`}
-        width={RECORD_SIZE}
-        height={RECORD_SIZE}
-        stroke="#00cc88"
-        strokeWidth={1}
-        // Start off as a circle
-        initial={{
-          x: getRecordX(2),
-          y: 250,
-          rx: 30,
-          opacity: 0,
-        }}
-        animate={{
-          opacity: +(shotIndex >= SHOT_CIRCLES_200_1),
-          y: 250 + (shotIndex >= SHOT_EMIT_200 ? 75 : 0),
-          x: shotIndex >= SHOT_SQUARE_200 ? getWindowX(2) : getRecordX(2),
-          rx: shotIndex >= SHOT_SQUARE_200 ? 0 : 30,
-        }}
+      <TransformableRecord
+        shotIndex={shotIndex}
+        eventTime={initialRecords[2]}
+        appearShotIndex={SHOT_CIRCLES_200_1}
+        aggregateShotIndex={SHOT_SQUARE_200}
+        emitShotIndex={SHOT_EMIT_200}
       />
 
-      <motion.text
-        key={`text-0`}
-        initial={{
-          x: getTextWindowX(200),
-          opacity: 0,
-        }}
-        animate={{
-          opacity: +(shotIndex >= SHOT_SQUARE_100),
-          y: 270 + (shotIndex >= SHOT_EMIT_100 ? 75 : 0),
-        }}
-        stroke={"#00cc88"}
-      >
-        {aggregates[200]}
-      </motion.text>
-
-      <motion.rect
-        key={`record-3`}
-        width={RECORD_SIZE}
-        height={RECORD_SIZE}
-        stroke="#00cc88"
-        strokeWidth={1}
-        // Start off as a circle
-        initial={{
-          x: getRecordX(3),
-          y: 250,
-          rx: 30,
-          opacity: 0,
-        }}
-        animate={{
-          opacity: +(shotIndex >= SHOT_CIRCLES_200_2),
-          y: 250 + (shotIndex >= SHOT_EMIT_200 ? 75 : 0),
-          x: shotIndex >= SHOT_SQUARE_200 ? getWindowX(3) : getRecordX(3),
-          rx: shotIndex >= SHOT_SQUARE_200 ? 0 : 30,
-        }}
+      {/* The window for [100, 200) */}
+      <TransformableText
+        shotIndex={shotIndex}
+        windowEnd={200}
+        appearShotIndex={SHOT_SQUARE_100}
+        emitShotIndex={SHOT_EMIT_100}
       />
 
-      <motion.rect
-        key={`record-4`}
-        width={RECORD_SIZE}
-        height={RECORD_SIZE}
-        stroke="#00cc88"
-        strokeWidth={1}
-        // Start off as a circle
-        initial={{
-          x: getRecordX(4),
-          y: 250,
-          rx: 30,
-          opacity: 0,
-        }}
-        animate={{
-          opacity: +(shotIndex >= SHOT_CIRCLES_300_1),
-          y: 250,
-          x: getRecordX(4),
-          rx: 30,
-        }}
+      <TransformableRecord
+        shotIndex={shotIndex}
+        eventTime={initialRecords[3]}
+        appearShotIndex={SHOT_CIRCLES_200_2}
+        aggregateShotIndex={SHOT_SQUARE_200}
+        emitShotIndex={SHOT_EMIT_200}
+      />
+
+      <TransformableRecord
+        shotIndex={shotIndex}
+        eventTime={initialRecords[4]}
+        appearShotIndex={SHOT_CIRCLES_300_1}
+        aggregateShotIndex={Infinity}
+        emitShotIndex={Infinity}
       />
 
       {tickMarks.map((tick, i) => (
@@ -257,36 +266,19 @@ export const OutOfOrder = (props: SceneProps): JSX.Element => {
         />
       ))}
 
-      <motion.text
-        key={`text-1`}
-        initial={{
-          x: getTextWindowX(300),
-          opacity: 0,
-        }}
-        animate={{
-          opacity: +(shotIndex >= SHOT_SQUARE_200),
-          y: 270 + (shotIndex >= SHOT_EMIT_200 ? 75 : 0),
-        }}
-        stroke={"#00cc88"}
-      >
-        {aggregates[300]}
-      </motion.text>
+      <TransformableText
+        shotIndex={shotIndex}
+        windowEnd={300}
+        appearShotIndex={SHOT_SQUARE_200}
+        emitShotIndex={SHOT_EMIT_200}
+      />
 
-      <motion.rect
-        key={`record-5`}
-        width={RECORD_SIZE}
-        height={RECORD_SIZE}
-        stroke="#00cc88"
-        strokeWidth={1}
-        initial={{
-          x: outOfOrderRecords[0] - RECORD_SIZE / 2,
-          y: 250,
-          rx: 30,
-          opacity: 0,
-        }}
-        animate={{
-          opacity: +(shotIndex >= SHOT_OOO_100),
-        }}
+      <TransformableRecord
+        shotIndex={shotIndex}
+        eventTime={outOfOrderRecords[0]}
+        appearShotIndex={SHOT_OOO_100}
+        aggregateShotIndex={Infinity}
+        emitShotIndex={Infinity}
       />
     </motion.svg>
   );
