@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { SceneProps } from "./types";
 import { d } from "./util";
+import { ArrowHead } from "./ArrowHead";
+import { Ticks } from "./Ticks";
 
 // Shot names
 const NUM_SHOTS = 12;
@@ -18,6 +20,32 @@ const SHOT_CIRCLES_300_1 = 8;
 const SHOT_SQUARE_200 = 9;
 const SHOT_EMIT_200 = 10;
 const SHOT_OOO_100 = 11;
+
+// Watermark stuff
+const WATERMARK_DELAY = 100;
+
+const fromShotIndexToLargestEventTime = (shotIndex: number): number => {
+  if (shotIndex >= SHOT_CIRCLES_300_1) {
+    return initialRecords[4];
+  } else if (shotIndex >= SHOT_CIRCLES_200_2) {
+    return initialRecords[3];
+  } else if (shotIndex >= SHOT_CIRCLES_200_1) {
+    return initialRecords[2];
+  } else if (shotIndex >= SHOT_CIRCLES_100_2) {
+    return initialRecords[1];
+  } else if (shotIndex >= SHOT_CIRCLES_100_1) {
+    return initialRecords[0];
+  } else {
+    return 0;
+  }
+};
+
+// Shot names for OutOfOrderWithWatermark
+
+const WM_NUM_SHOTS = 3;
+
+const WM_SHOT_TIMELINE = 0;
+const WM_SHOT_TICKS = 1;
 
 const getWindow = (record: number): number => {
   return Math.ceil(record / 100) * 100;
@@ -50,7 +78,7 @@ const aggregates = initialRecords.reduce<Record<number, number>>(
 );
 
 // Intentionally center these so that they align with the squares
-const outOfOrderRecords = [160];
+const outOfOrderRecords = [270];
 
 const tickMarks = [100, 200, 300, 400, 500];
 
@@ -82,17 +110,6 @@ const TransformableRecord = (props: TransformableRecordProps): JSX.Element => {
     emitShotIndex,
   } = props;
 
-  console.log(
-    "shotIndex",
-    shotIndex,
-    "appearShotIndex",
-    appearShotIndex,
-    "aggregateShotIndex",
-    aggregateShotIndex,
-    "emitShotIndex",
-    emitShotIndex
-  );
-
   return (
     <motion.rect
       width={RECORD_SIZE}
@@ -112,7 +129,7 @@ const TransformableRecord = (props: TransformableRecordProps): JSX.Element => {
             ? getVisualWindowX(eventTime)
             : getVisualX(eventTime),
         rx: shotIndex >= aggregateShotIndex ? 0 : 30,
-        y: 250 + (shotIndex >= emitShotIndex ? 75 : 0),
+        y: 250 + (shotIndex >= emitShotIndex ? 100 : 0),
       }}
     />
   );
@@ -141,7 +158,7 @@ const TransformableText = (props: TransformableTextProps): JSX.Element => {
       }}
       animate={{
         opacity: +(shotIndex >= appearShotIndex),
-        y: 270 + (shotIndex >= emitShotIndex ? 75 : 0),
+        y: 270 + (shotIndex >= emitShotIndex ? 100 : 0),
       }}
       stroke={"#00cc88"}
     >
@@ -150,7 +167,16 @@ const TransformableText = (props: TransformableTextProps): JSX.Element => {
   );
 };
 
-export const OutOfOrder = (props: SceneProps): JSX.Element => {
+/*
+
+timeline, ticks
+
+the first two events within 100
+
+
+*/
+
+export const OutOfOrderWithWatermark = (props: SceneProps): JSX.Element => {
   const { shotIndex, onSceneComplete } = props;
 
   useEffect(() => {
@@ -203,6 +229,29 @@ export const OutOfOrder = (props: SceneProps): JSX.Element => {
         transition={{ duration: d(1), delay: d(1) }}
         strokeWidth={2}
       />
+    </motion.svg>
+  );
+};
+
+export const OutOfOrder = (props: SceneProps): JSX.Element => {
+  const { shotIndex, onSceneComplete } = props;
+
+  useEffect(() => {
+    if (shotIndex === NUM_SHOTS) {
+      onSceneComplete();
+    }
+  }, [shotIndex, onSceneComplete]);
+
+  return (
+    <motion.svg
+      className="self-center"
+      width="600"
+      height="600"
+      viewBox="0 0 600 600"
+      initial="hidden"
+      animate="visible"
+    >
+      <ArrowHead show={shotIndex >= SHOT_TIMELINE} y={300} from={0} to={600} />
 
       <TransformableRecord
         shotIndex={shotIndex}
@@ -252,19 +301,13 @@ export const OutOfOrder = (props: SceneProps): JSX.Element => {
         emitShotIndex={Infinity}
       />
 
-      {tickMarks.map((tick, i) => (
-        <motion.line
-          key={`tick-${i}`}
-          initial={{ x1: tick, y1: 290, x2: tick, y2: 310, opacity: 0 }}
-          animate={{ opacity: +(shotIndex >= SHOT_TICKS) }}
-          transition={{
-            duration: d(0.5),
-            delay: d(i * 0.5),
-          }}
-          stroke="#00cc88"
-          strokeWidth={1.5}
-        />
-      ))}
+      <Ticks
+        show={shotIndex >= SHOT_TICKS}
+        from={0}
+        to={600}
+        y={300}
+        spacing={100}
+      />
 
       <TransformableText
         shotIndex={shotIndex}

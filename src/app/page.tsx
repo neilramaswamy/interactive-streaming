@@ -1,6 +1,7 @@
 "use client";
 
 import { DelayDistribution } from "@/components/DelayDistribution";
+import { FundamentalTradeoff } from "@/components/FundamentalTradeoff";
 import { Intro } from "@/components/Intro";
 import { OutOfOrder } from "@/components/OutOfOrder";
 import { OutOfOrderSummary } from "@/components/OutOfOrderSummary";
@@ -10,9 +11,11 @@ import { useCallback, useEffect, useState } from "react";
 // Scenes should be a list of React components that have SceneProps as Props
 const SCENES: React.FC<SceneProps>[] = [
   Intro,
+  // TODO: a slide for "what is streaming"
   OutOfOrder,
   OutOfOrderSummary,
   DelayDistribution,
+  FundamentalTradeoff,
 ];
 
 export default function Home() {
